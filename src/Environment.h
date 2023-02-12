@@ -49,8 +49,6 @@
 #define KAKADU_READMODE 0
 #define IIIF_VERSION 2
 
-// Annotation database stuff
-#define ANNOT_DB_STRING ""
 
 #include <string>
 
@@ -325,12 +323,6 @@ class Environment {
     }
     else version = IIIF_VERSION;
     return version;
-  }
-
-  static std::string getAnnotDbString(){
-    char* envpara = getenv( "ANNOT_DB_STRING" );
-    if( envpara ) return std::string( envpara );
-    else return ANNOT_DB_STRING;
   }
 };
 

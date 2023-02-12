@@ -20,7 +20,6 @@
 
 #include "Task.h"
 #include "Tokenizer.h"
-#include <Annotation.h>
 #include <cstdlib>
 #include <algorithm>
 
@@ -93,8 +92,6 @@ Task *Task::factory(const string &t)
     return new COL;
   else if (type == "iiif")
     return new IIIF;
-  else if (type == "annotation")
-    return new Annotation;
   else
     return NULL;
 }

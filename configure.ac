@@ -152,6 +152,31 @@ AC_SUBST(LIBFCGI_LIBS)
 
 
 
+##************************************************************
+## Check for minizip
+#
+#AC_ARG_WITH( minizip-ng-incl,
+#   [  --minizip-ng-incl=DIR          location of the minizip-ng include files],
+#   [LIBMINIZIP_INCLUDES="-I$withval"]
+#)
+#
+#AC_ARG_WITH( minizip-ng-lib,
+#   [  --with-minizip-ng-lib=DIR      location of the minizip-ng libraries],
+#   [LIBMINIZIP_LDFLAGS="-L$withval"]
+#)
+#
+#AC_CHECK_LIB( minizip-ng, MINIZIP_Accept,
+#	AC_MSG_RESULT([configure: unable to find custom minizip-ng: using default paths]);
+#		LIBMINIZIP_INCLUDES="-I../../minizip-ng";
+#		LIBMINIZIP_LIBS="../../minizip-ng/libminizip-ng.a"
+#)
+#
+#AC_SUBST(LIBMINIZIP_INCLUDES)
+#AC_SUBST(LIBMINIZIP_LDFLAGS)
+#AC_SUBST(LIBMINIZIP_LIBS)
+
+
+
 
 #************************************************************
 #     Check for PNG support

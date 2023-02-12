@@ -2,10 +2,11 @@
 
 noinst_PROGRAMS =	iipsrv.fcgi
 
-
-INCLUDES =		@INCLUDES@ @LIBFCGI_INCLUDES@ @JPEG_INCLUDES@ @TIFF_INCLUDES@
-LIBS =			@LIBS@ @LIBFCGI_LIBS@ @DL_LIBS@ @JPEG_LIBS@ @TIFF_LIBS@ -lm
-AM_LDFLAGS =		@LIBFCGI_LDFLAGS@
+# Minizip added manually for now! Hardcoded include path
+AM_CPPFLAGS =	@INCLUDES@ @LIBFCGI_INCLUDES@ @JPEG_INCLUDES@ @TIFF_INCLUDES@  glib-2.0 -I../../minizip-ng
+LIBS =			@LIBS@ @LIBFCGI_LIBS@ @DL_LIBS@ @JPEG_LIBS@ @TIFF_LIBS@  glib-2.0 -lm 
+# Minizip added manually for now! Hardcoded static lib path
+AM_LDFLAGS =	@LIBFCGI_LDFLAGS@ ../../minizip-ng/libminizip-ng.a
 
 iipsrv_fcgi_LDADD = Main.o
 
@@ -28,11 +29,6 @@ endif
 EXTRA_iipsrv_fcgi_SOURCES = DSOImage.h DSOImage.cc KakaduImage.h KakaduImage.cc Main.cc OpenJPEGImage.h OpenJPEGImage.cc PNGCompressor.h PNGCompressor.cc
 
 iipsrv_fcgi_SOURCES = \
-			Annotation.cc \
-			Annotation.h \
-			PostProcessor.h \
-			PostProcessor.cc \
-			ConnectionPreparator.h \
 			IIPImage.h \
 			IIPImage.cc \
 			TPTImage.h \
@@ -46,12 +42,10 @@ iipsrv_fcgi_SOURCES = \
 			TileManager.h \
 			TileManager.cc \
 			Tokenizer.h \
-			IAnnotation.h \
 			IIPResponse.h \
 			IIPResponse.cc \
 			View.h \
 			View.cc \
-			Transactions.h \
 			Transforms.h \
 			Transforms.cc \
 			Environment.h \

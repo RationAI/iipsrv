@@ -25,6 +25,14 @@
 #include <cmath>
 #include <sstream>
 #include <algorithm>
+#include <memory>
+
+#include "mz.h"
+#include "mz_strm.h"
+#include "mz_strm_mem.h"
+#include "mz_zip.h"
+#include "mz_os.h"
+#include "mz_zip_rw.h"
 
 using namespace std;
 
@@ -111,6 +119,105 @@ void JTL_Ext::send(Compressor *compressor,
     free(buffer);
   }
   session->out->putStr(dataStream.str().c_str(), dataStream.tellp());
+
+  if (session->out->flush() == -1) {
+    if (session->loglevel >= 1) {
+      *(session->logfile) << "JTLExt :: Error flushing tile" << endl;
+    }
+  }
+  // Inform our response object that we have sent something to the client
+  session->response->setImageSent();
+}
+
+void JTL_Ext::sendZip(Compressor *compressor,
+                   const vector<CompressedTile> &compressedTiles,
+                   const vector<int> &invalidPathIndices,
+                   const )
+{
+  int tileCount = compressedTiles.size() + invalidPathIndices.size();
+
+  int32_t err = MZ_OK;
+  void *mem_stream = NULL;
+  void *handle = NULL;
+
+  mz_stream_mem_create(&mem_stream);
+  mz_stream_mem_set_grow_size(mem_stream, (16 * 1024));
+  mz_stream_open(mem_stream, NULL, MZ_OPEN_MODE_CREATE);
+
+  mz_zip_writer_create(&handle);
+  err = mz_zip_writer_open(handle, mem_stream, 0); //0 - create
+  if (err != MZ_OK) {
+   *(session->logfile) << "JTLExt :: Failed to open zip writer! Error: " << err << endl;
+  }
+
+  CompressionType compressionType = compressor->getCompressionType();
+  string format = compressionType == JPEG ? ".jpg" : ".png";
+  int compressedI = 0;
+  for (int i = 0; i < tileCount; i++) {
+
+    mz_zip_file file_info = { 0 };
+    char buff[20];
+    snprintf(buff, sizeof(buff), "t%d%s", i, format.c_str());
+    file_info.filename = buff;
+    file_info.modified_date = time(NULL);
+    file_info.version_madeby = MZ_VERSION_MADEBY;
+    file_info.compression_method = MZ_COMPRESS_METHOD_STORE;
+    file_info.flag = MZ_ZIP_FLAG_UTF8;
+
+    err == mz_zip_writer_entry_open(handle, &file_info);
+    if (err != MZ_OK) {
+      *(session->logfile) << "JTLExt :: Unable to create a zip entry! Error: " << err << endl;
+    } else {
+      if (!contains(invalidPathIndices, i)) {
+        int32_t bytes_written = mz_zip_writer_entry_write(
+          handle, 
+          compressedTiles[compressedI].rawtile.data,
+          compressedTiles[compressedI].compressedLen);
+        if (bytes_written != compressedTiles[compressedI].compressedLen) {
+           *(session->logfile) << "JTLExt :: Zip entry write failed! Written " << bytes_written << ". Error: " << err << endl;
+        }
+        compressedI++;
+      } else {
+        const unsigned char *empty = 0x00;
+        mz_zip_writer_entry_write(handle, empty, 0);
+      }
+      err = mz_zip_writer_entry_close(handle);
+      if (err != MZ_OK) {
+         *(session->logfile) << "JTLExt :: Failed to write zip entry! Error: " << err << endl;
+      }
+    }
+  }
+
+  err = mz_zip_writer_close(handle);
+  if (err != MZ_OK) {
+    *(session->logfile) << "JTLExt :: Failed to close zip! Error: " << err << endl;
+  }
+
+  int32_t mem_stream_size = 0;
+  mz_stream_mem_seek(mem_stream, 0, 0);
+  mz_stream_mem_get_buffer_length(mem_stream, &mem_stream_size);
+  *(session->logfile) << "JTLExt :: Total size: " << mem_stream_size << endl;
+
+  stringstream header;
+  header << session->response->createHTTPHeader("application/octet-stream", "", mem_stream_size);
+  if (session->out->putStr((const char *)header.str().c_str(), header.tellp()) == -1) {
+    if (session->loglevel >= 1) {
+      *(session->logfile) << "JTLExt :: Error writing HTTP header" << endl;
+    }
+  }
+  *(session->logfile) << "JTLExt :: Write stream size   " << mem_stream_size << endl;
+
+  std::unique_ptr<char[]> out_buff(new char[mem_stream_size]);
+  mz_stream_mem_seek(mem_stream, 0, 0);
+  char* buff_ptr = out_buff.get();
+  if ((err = mz_stream_mem_read(mem_stream, buff_ptr, mem_stream_size)) != mem_stream_size) {
+    *(session->logfile) << "JTLExt :: Output reading failed! Read only " << err << " out of " << mem_stream_size << endl;
+  }
+  session->out->putStr(buff_ptr, mem_stream_size);
+
+  mz_zip_writer_delete(&handle);
+  mz_stream_mem_close(mem_stream);
+  mz_stream_mem_delete(&mem_stream);
 
   if (session->out->flush() == -1) {
     if (session->loglevel >= 1) {

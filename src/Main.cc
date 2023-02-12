@@ -37,8 +37,6 @@
 #include "Environment.h"
 #include "Writer.h"
 #include "Logger.h"
-#include "PostProcessor.h"
-#include "ConnectionPreparator.h"
 
 #ifdef HAVE_MEMCACHED
 #ifdef WIN32
@@ -543,17 +541,6 @@ int main(int argc, char *argv[])
   tc = &tileCache;
   Task *task = NULL;
 
-  // Connect to annotations database and prepare SQL statements
-  unique_ptr<pqxx::connection> connection;
-  try
-  {
-    connection.reset(new pqxx::connection(Environment::getAnnotDbString()));
-    ConnectionPreparator::prepare(*connection);
-  }
-  catch (const exception &e)
-  {
-    logfile << "Connection to the annotation db has failed!" << endl;
-  }
 
   /****************
     Main FCGI loop
@@ -605,7 +592,7 @@ int main(int argc, char *argv[])
     {
 
       // Set up our session data object
-      Session session(connection.get());
+      Session session;
       session.image = &image;
       session.response = &response;
       session.view = &view;
@@ -667,13 +654,6 @@ int main(int argc, char *argv[])
 #endif
 
         request_string = (header != NULL) ? header : "";
-      }
-
-      // Process POST request if get fails
-      if (request_string.empty())
-      {
-        PostProcessor postProcessor(loglevel, &logfile);
-        request_string = postProcessor.process(request);
       }
 
       // Check that we actually have a request string. If not, just show server home page
@@ -938,22 +918,6 @@ int main(int argc, char *argv[])
       {
         logfile << error.what() << endl;
         logfile << "Sending HTTP 404 Not Found" << endl;
-      }
-    }
-
-    // Annotation errors
-    catch (const annotation_error &error)
-    {
-      string status = "Status: 400 Bad Request\r\nServer: iipsrv/" + version +
-                      "\r\nContent-Type: text/plain; charset=utf-8" +
-                      (response.getCORS().length() ? "\r\n" + response.getCORS() : "") +
-                      "\r\n\r\n" + error.what();
-      writer.putS(status.c_str());
-      writer.flush();
-      if (loglevel >= 2)
-      {
-        logfile << error.what() << endl;
-        logfile << "Sending HTTP 400 Bad Request" << endl;
       }
     }
 

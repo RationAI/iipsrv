@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 #include <Task.h>
-#include <jsoncpp/json/json.h>
 
 class Utils
 {
@@ -52,22 +51,6 @@ public:
      * @return converted string
      */
     static std::string toLower(const std::string &s);
-
-    /**
-     * @brief Converts string to Json::Value.
-     * 
-     * @param jsonString string to convert
-     * @return Json::Value
-     */
-    static Json::Value parseJson(const std::string &jsonString);
-
-    /**
-     * @brief Converts Json::Value to string.
-     * 
-     * @param json json to convert
-     * @return std::string 
-     */
-    static std::string jsonToString(const Json::Value &json);
 
 private:
     static std::string ltrim(const std::string &s);

@@ -24,7 +24,6 @@
 #include <string>
 #include <tuple>
 #include <vector>
-#include <pqxx/pqxx>
 
 #include "IIPImage.h"
 #include "IIPResponse.h"
@@ -38,7 +37,6 @@
 #include "Transforms.h"
 #include "Logger.h"
 #include "PNGCompressor.h"
-#include "IAnnotation.h"
 
 // Define our http header cache max age (24 hours)
 #define MAX_AGE 86400
@@ -71,10 +69,6 @@ struct Session
 
   imageCacheMapType *imageCache;
   Cache *tileCache;
-
-  pqxx::connection *const connection;
-
-  Session(pqxx::connection *const connection) : connection(connection){};
 
 #ifdef DEBUG
   FileWriter *out;
@@ -234,6 +228,9 @@ public:
   void send(Compressor *compressor,
             const std::vector<CompressedTile> &compressedTiles,
             const std::vector<int> &invalidPathIndices);
+  void sendZip(Compressor *compressor,
+            const std::vector<CompressedTile> &compressedTiles,
+            const std::vector<int> &invalidPathIndices);
 };
 
 /// PNG Tile Command
@@ -341,14 +338,6 @@ class DeepZoomExt : public Task
 {
 public:
   void run(Session *session, const std::string &argument);
-};
-
-/// Define our own derived exception class for annotation errors
-class annotation_error : public std::runtime_error
-{
-public:
-  /** @param s error message */
-  annotation_error(std::string s) : std::runtime_error(s) {}
 };
 
 /// IIIF Command
