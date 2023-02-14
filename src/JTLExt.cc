@@ -131,8 +131,7 @@ void JTL_Ext::send(Compressor *compressor,
 
 void JTL_Ext::sendZip(Compressor *compressor,
                    const vector<CompressedTile> &compressedTiles,
-                   const vector<int> &invalidPathIndices,
-                   const )
+                   const vector<int> &invalidPathIndices)
 {
   int tileCount = compressedTiles.size() + invalidPathIndices.size();
 

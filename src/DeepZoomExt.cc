@@ -81,8 +81,8 @@ struct DZExtResponseData
 };
 
 bool pathExists(const string &path);
-void sendExistingFileResponse(Session *session, DZExtResponseData &data);
-void sendMissingFileResponse(Session *session, DZExtResponseData data);
+void sendExistingFileResponse(Session *session, DZExtResponseData &data, bool zip);
+void sendMissingFileResponse(Session *session, DZExtResponseData data, bool zip);
 
 void DeepZoomExt::run(Session *session, const std::string &argument)
 {
@@ -109,6 +109,7 @@ void DeepZoomExt::run(Session *session, const std::string &argument)
   // starting from the bottom left.
   
 
+  bool zip = false;
   string prefix, suffix;
   suffix = strippedArgument.substr(argument.find_last_of(".") + 1, argument.length());
 
@@ -128,6 +129,13 @@ void DeepZoomExt::run(Session *session, const std::string &argument)
   }
   else if (format.rfind("png", 0) == 0)
   {
+    session->view->output_format = PNG;
+    compressor = session->png;
+  }
+  else if (format.rfind("zip", 0) == 0)
+  {
+    //use PNG internally, let PNG
+    zip = true;
     session->view->output_format = PNG;
     compressor = session->png;
   }
@@ -165,11 +173,11 @@ void DeepZoomExt::run(Session *session, const std::string &argument)
 
     if (!invalidPathIndices.empty() && invalidPathIndices.back() == i)
     {
-      sendMissingFileResponse(session, data);
+      sendMissingFileResponse(session, data, zip);
     }
     else
     {
-      sendExistingFileResponse(session, data);
+      sendExistingFileResponse(session, data, zip);
     }
   }
   if (session->loglevel >= 2)
@@ -190,7 +198,7 @@ bool pathExists(const string &path)
   return file.good();
 }
 
-void sendExistingFileResponse(Session *session, DZExtResponseData &data)
+void sendExistingFileResponse(Session *session, DZExtResponseData &data, bool zip)
 {
   if (session->loglevel >= 3)
     (*session->logfile) << "DeepZoomExt :: sending existing file response" << endl;
@@ -303,12 +311,16 @@ void sendExistingFileResponse(Session *session, DZExtResponseData &data)
     // Send appended tile(s) after processing all images
     if (data.isLast)
     {
-      data.jtl.send(data.compressor, data.compressedTiles, data.invalidPathIndices);
+      if (zip) {
+        data.jtl.sendZip(data.compressor, data.compressedTiles, data.invalidPathIndices);
+      } else {
+        data.jtl.send(data.compressor, data.compressedTiles, data.invalidPathIndices);
+      }
     }
   }
 }
 
-void sendMissingFileResponse(Session *session, DZExtResponseData data)
+void sendMissingFileResponse(Session *session, DZExtResponseData data, bool zip)
 {
   if (session->loglevel >= 3)
     (*session->logfile) << "DeepZoomExt :: sending missing file response" << endl;
@@ -337,7 +349,11 @@ void sendMissingFileResponse(Session *session, DZExtResponseData data)
   {
     if (data.isLast)
     {
-      data.jtl.send(data.compressor, data.compressedTiles, data.invalidPathIndices);
+      if (zip) {
+        data.jtl.sendZip(data.compressor, data.compressedTiles, data.invalidPathIndices);
+      } else {
+        data.jtl.send(data.compressor, data.compressedTiles, data.invalidPathIndices);
+      }
     }
   }
 }

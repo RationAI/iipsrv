@@ -3,10 +3,10 @@
 noinst_PROGRAMS =	iipsrv.fcgi
 
 # Minizip added manually for now! Hardcoded include path
-AM_CPPFLAGS =	@INCLUDES@ @LIBFCGI_INCLUDES@ @JPEG_INCLUDES@ @TIFF_INCLUDES@ -I../../minizip-ng
-LIBS =			@LIBS@ @LIBFCGI_LIBS@ @DL_LIBS@ @JPEG_LIBS@ @TIFF_LIBS@ -lm 
+AM_CPPFLAGS =	@INCLUDES@ @LIBFCGI_INCLUDES@ @JPEG_INCLUDES@ @TIFF_INCLUDES@
+LIBS =			@LIBS@ @LIBFCGI_LIBS@ @DL_LIBS@ @JPEG_LIBS@ @TIFF_LIBS@ -lm -lminizip-ng
 # Minizip added manually for now! Hardcoded static lib path
-AM_LDFLAGS =	@LIBFCGI_LDFLAGS@ ../../minizip-ng/libminizip-ng.a
+AM_LDFLAGS =	@LIBFCGI_LDFLAGS@
 
 iipsrv_fcgi_LDADD = Main.o
 

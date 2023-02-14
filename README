@@ -86,9 +86,20 @@ environment using autogen.sh:
 
     ./autogen.sh
 
-Otherwise for release versions, use configure directly:
+Otherwise for release versions, use configure directly. The extension depends in vips and minizip.
+Vips (dev) should be installed (e.g. apt-get...), minizip-ng should be compiled and the link
+to the library directory should be specified in LDFLAGS and CPPFLAGS. This example compiles and uses
+the minizip library in the same parent directory as the iipsrv repository. Note that the compilation
+happens in iipsrv/src/.
 
-    ./configure
+> - parent_dir
+> |  - iipsrv
+> |  - minizip-ng
+> |  | - libminizip-ng.a
+
+    ./configure CXXFLAGS="$(pkg-config vips-cpp --cflags)" LIBS="$(pkg-config vips-cpp --libs)" \ 
+       LDFLAGS="-L../../minizip-ng" \
+       CPPFLAGS="-I../../minizip-ng"
     make
 
 
