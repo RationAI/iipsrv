@@ -656,6 +656,25 @@ int main(int argc, char *argv[])
         request_string = (header != NULL) ? header : "";
       }
 
+      // Try to get request string using POST
+      // inspired by http://chriswu.me/blog/getting-request-uri-and-content-in-c-plus-plus-fcgi/
+      // todo: possibly read JSON requests?  https://github.com/xkacenga/iipsrv/blob/master/src/PostProcessor.cc
+      if (request_string.empty()) {
+        char *contentLengthString = FCGX_GetParam("CONTENT_LENGTH", request.envp);
+        int contentLength;
+        if (contentLengthString) {
+          contentLength = atoi(contentLengthString);
+        } else {
+          contentLength = 0;
+        }
+        char *contentBuffer = new char[contentLength];
+        FCGX_GetStr(contentBuffer, contentLength, request.in);
+
+        string content(contentBuffer, contentLength);
+        delete [] contentBuffer;
+        request_string = content;
+      }
+
       // Check that we actually have a request string. If not, just show server home page
       if (request_string.empty())
       {
